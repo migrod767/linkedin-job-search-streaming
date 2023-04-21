@@ -26,18 +26,30 @@ class LinkedinScrapper:
         self.current_date_time = ''
 
     def search_scraper(self, page_number):
+        """
+
+        :param page_number:
+        :return:
+        """
+        # Scraps the url using the pagination number (page_number)
         print(f"Scraping page number {page_number}")
         next_page = self.search_url + str(page_number)
 
+        # Change the url request using Scraper Api
         scraperapi_url = self.scraperapi_request_url(next_page)
-        response = requests.get(str(scraperapi_url))
-        soup = BeautifulSoup(response.content, 'html.parser')
 
+        # Make the request to LinkedIn
+        response = requests.get(str(scraperapi_url))
+        # Parse the result using B4S
+        soup = BeautifulSoup(response.content, 'html.parser')
+        # Get a list of the jobs found in the response
         jobs = soup.find_all('div',
                              class_='base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card')
+
         jobs_list = []
         split_n = 0
         lst_len = len(jobs)
+        # For each job post pull the important information
         for idx, job in enumerate(jobs, start=1):
             start = time.time()
             now = datetime.now()  # current date and time
@@ -47,7 +59,8 @@ class LinkedinScrapper:
             job_company = job.find('h4', class_='base-search-card__subtitle').text.strip()
             job_location = job.find('span', class_='job-search-card__location').text.strip()
             job_link = job.find('a', class_='base-card__full-link')['href']
-            job_description = self.job_scraper(job_link)
+            # The job_scraper goes to the job url and pulls the description information.
+            job_description = self.job_url_scraper(job_link)
             job_id = str(uuid.uuid4())
 
             end = time.time()
@@ -77,6 +90,13 @@ class LinkedinScrapper:
                 self.write_jobs_json(page_n=page_number, split_n=split_n, jobs_info=jobs_list)
 
     def write_jobs_json(self, page_n, split_n, jobs_info):
+        """
+        With the job information scrapped it gets dumped into a json file.
+        :param page_n: Is the page number
+        :param split_n: The json file only saves N jobs per file,
+        :param jobs_info:
+        :return:
+        """
         file_dict = {'search_id': self.search_id,
                      'info_type': 'job',
                      'page_number': page_n,
@@ -90,7 +110,12 @@ class LinkedinScrapper:
         print(f"Dumping job info to {json_file_name}")
         print(f"Jobs {len(jobs_info)} \n")
 
-    def job_scraper(self, job_webpage):
+    def job_url_scraper(self, job_webpage):
+        """
+        This method calls the job post url and pulls the description and other information from the page.
+        :param job_webpage: is the url of the job post
+        :return:
+        """
         scraperapi_url = self.scraperapi_request_url(job_webpage)
         response = requests.get(str(scraperapi_url))
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -119,6 +144,10 @@ class LinkedinScrapper:
         return json_desc
 
     def url_params(self):
+        """
+        Pulls the url query params for the search url to save the parameters used in the search
+        :return:
+        """
         parsed_url = urlparse(self.search_url)
         url_params = parse_qs(parsed_url.query)
 
@@ -129,6 +158,12 @@ class LinkedinScrapper:
         return clean_dict
 
     def scraperapi_request_url(self, target_url):
+        """
+        Changes the url using Scraper API if it is active
+        :param target_url:
+        :return:
+        """
+
         if self.scraperapi_on_off == 1:
             scraperapi_url = f'http://api.scraperapi.com?api_key={self.scraperapi_key}&url={target_url}'
 
@@ -142,6 +177,11 @@ class LinkedinScrapper:
         return scraperapi_url
 
     def run_scrapper(self, webpage):
+        """
+        This is the main method, it gets the LinkedIn job search url and starts looping through the pages.
+        :param webpage:
+        :return:
+        """
         print("Start scrapper...")
         total_start = time.time()
         self.search_url = webpage
@@ -161,12 +201,14 @@ class LinkedinScrapper:
         }
         print(f"url params: {params}")
 
+        # Drops the search information into a json file
+        # TODO I think this will change if we are going to use mongo
         json_file_name = f'search_{self.current_date_time}.json'
         with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
             json.dump(search_info, fp)
-
         print(f"search file name: {json_file_name}")
 
+        # Loops through the pages of the search
         for page_number in range(0, 25 * self.n_scrap_pages, 25):
             self.search_scraper(page_number)
 
