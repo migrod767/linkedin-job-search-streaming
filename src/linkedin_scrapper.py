@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 import uuid
 from datetime import datetime
+from datetime import timezone
 import time
 from kafka_controller import KafkaProducer
 
@@ -17,17 +18,50 @@ class LinkedinScrapper:
     def __init__(self):
         self.jobs_per_json = 10
         self.n_scrap_pages = 10
-        self.sleep_between_requests = 1
+        self.sleep_between_requests = 0.5
+
+        self.scraperapi_on_off = False  # 1=on 0=off
         self.scraperapi_key = '0d838c8cdb4a90405e5ab4a4997a64a1'
-        self.scraperapi_on_off = 0  #1=on 0=off
+
+        self.json_file_on_off = True
         self.output_dir = os.path.join('..', 'data')
-        self.search_url = ''
-        self.search_id = ''
-        self.current_date_time = ''
+        self.search_url = None
+        self.search_id = None
+
+        self.json_name_dt_format = "%Y-%m-%d_%H-%M-%S"
+        self.current_date_time = None
+        self.current_date_time_file_fmt = None
+
+        self.kafka_on_off = False
+        self.kafka_job_data_topic = 'linkedin_scrapper_job_data'
+        self.kafka_search_data_topic = 'linkedin_scrapper_search_data'
+
+    def push_message_to_kafka(self, message, topic):
+        kafka_producer = KafkaProducer()
+        kafka_producer.load_topic(topic)
+        if isinstance(message, dict):
+            outbound_message = str(json.dumps(message))
+        elif isinstance(message, str):
+            outbound_message = message
+        else:
+            raise Exception("message type not supported")
+
+        kafka_producer.send_message(outbound_message)
+
+    def send_outbound_information(self, outbound_info, json_file_name, kafka_topic):
+        if self.json_file_on_off is True:
+            # Drops the search information into a json file
+            with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
+                json.dump(outbound_info, fp)
+            print(f"file name: {json_file_name}")
+
+        # Push the information to Kafka
+        if self.kafka_on_off is True:
+            self.push_message_to_kafka(outbound_info, kafka_topic)
 
     def search_scraper(self, page_number):
         """
-
+        Gets the information of the search, starts looping over the jobs and the pages of the url.
         :param page_number:
         :return:
         """
@@ -35,8 +69,11 @@ class LinkedinScrapper:
         print(f"Scraping page number {page_number}")
         next_page = self.search_url + str(page_number)
 
+        search_info = {'search_id': self.search_id,
+                       'page_number': page_number}
+
         # Change the url request using Scraper Api
-        scraperapi_url = self.scraperapi_request_url(next_page)
+        scraperapi_url = self.get_request_url(next_page)
 
         # Make the request to LinkedIn
         response = requests.get(str(scraperapi_url))
@@ -46,14 +83,11 @@ class LinkedinScrapper:
         jobs = soup.find_all('div',
                              class_='base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card')
 
-        jobs_list = []
-        split_n = 0
-        lst_len = len(jobs)
         # For each job post pull the important information
         for idx, job in enumerate(jobs, start=1):
             start = time.time()
-            now = datetime.now()  # current date and time
-            current_date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+            now = datetime.now(timezone.utc)  # current date and time
+            scrape_dt = now.isoformat()
             job_title = job.find('h3', class_='base-search-card__title').text.strip()
             print(f"getting job {job_title}...")
             job_company = job.find('h4', class_='base-search-card__subtitle').text.strip()
@@ -64,51 +98,26 @@ class LinkedinScrapper:
             job_id = str(uuid.uuid4())
 
             end = time.time()
-            scrap_time = "{time:6.2f}".format(time=(end-start))
+            scrap_time = "{time:6.2f}".format(time=(end - start))
 
             job_dict = {
                 'job_id': job_id,
-                'job_dt': current_date_time,
+                'scrape_dt': scrape_dt,
                 'title': job_title,
                 'company': job_company,
                 'location': job_location,
                 'link': job_link,
-                'scrap_time': scrap_time
+                'scrape_time': scrap_time
             }
             job_dict.update(job_description)
-            jobs_list.append(job_dict)
+
+            outbound_data = search_info | job_dict
+
+            json_file_name = f'job_{now.strftime(self.json_name_dt_format)}.json'
+            self.send_outbound_information(outbound_data, json_file_name, self.kafka_job_data_topic)
 
             end = time.time()
-            print(f"scrap time: {end - start:6.2f} s \n")
-
-            if idx % self.jobs_per_json == 0:
-                self.write_jobs_json(page_n=page_number, split_n=split_n, jobs_info=jobs_list)
-                jobs_list = []
-                split_n = split_n + 1
-
-            if (idx == lst_len) and (len(jobs_list) != 0):
-                self.write_jobs_json(page_n=page_number, split_n=split_n, jobs_info=jobs_list)
-
-    def write_jobs_json(self, page_n, split_n, jobs_info):
-        """
-        With the job information scrapped it gets dumped into a json file.
-        :param page_n: Is the page number
-        :param split_n: The json file only saves N jobs per file,
-        :param jobs_info:
-        :return:
-        """
-        file_dict = {'search_id': self.search_id,
-                     'info_type': 'job',
-                     'page_number': page_n,
-                     'split_n': split_n,
-                     'jobs': jobs_info
-                     }
-        json_file_name = f'jobs_{self.current_date_time}_{page_n}_{split_n}.json'
-        with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
-            json.dump(file_dict, fp)
-
-        print(f"Dumping job info to {json_file_name}")
-        print(f"Jobs {len(jobs_info)} \n")
+            print(f"scrape time: {end - start:6.2f} s \n")
 
     def job_url_scraper(self, job_webpage):
         """
@@ -116,10 +125,18 @@ class LinkedinScrapper:
         :param job_webpage: is the url of the job post
         :return:
         """
-        scraperapi_url = self.scraperapi_request_url(job_webpage)
+        scraperapi_url = self.get_request_url(job_webpage)
         response = requests.get(str(scraperapi_url))
         soup = BeautifulSoup(response.content, 'html.parser')
+        # Get when the job post was posted
+        try:
+            date_posted = json.loads(soup.find('script', type='application/ld+json').text)['datePosted']
+            date_posted = datetime.strptime(date_posted, '%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc).isoformat()
+        except:
+            # TODO Log not able to get posted date
+            date_posted = ""
 
+        # Get description from the job post
         description_bs4 = soup.find_all('div', class_='show-more-less-html__markup')
         stringfy_desc = []
 
@@ -140,14 +157,18 @@ class LinkedinScrapper:
                     criteria_dict[key] = value
 
         json_desc['description_criteria'] = criteria_dict
+        json_desc['job_date_posted'] = date_posted
 
         return json_desc
 
-    def url_params(self):
+    def get_url_params(self):
         """
-        Pulls the url query params for the search url to save the parameters used in the search
+        Pulls the url query params for the search url and returns them as a dict
         :return:
         """
+        if self.search_url is None:
+            raise Exception("There is no search url please load one.")
+
         parsed_url = urlparse(self.search_url)
         url_params = parse_qs(parsed_url.query)
 
@@ -157,17 +178,17 @@ class LinkedinScrapper:
 
         return clean_dict
 
-    def scraperapi_request_url(self, target_url):
+    def get_request_url(self, target_url):
         """
         Changes the url using Scraper API if it is active
         :param target_url:
         :return:
         """
 
-        if self.scraperapi_on_off == 1:
+        if self.scraperapi_on_off is True:
             scraperapi_url = f'http://api.scraperapi.com?api_key={self.scraperapi_key}&url={target_url}'
 
-        elif self.scraperapi_on_off == 0:
+        elif self.scraperapi_on_off is False:
             scraperapi_url = target_url
 
         else:
@@ -185,28 +206,23 @@ class LinkedinScrapper:
         print("Start scrapper...")
         total_start = time.time()
         self.search_url = webpage
-        params = self.url_params()
+        params = self.get_url_params()
 
         self.search_id = str(uuid.uuid4())
-        now = datetime.now()  # current date and time
-        self.current_date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-        print(f"timestamp: {self.current_date_time}")
+        self.current_date_time = datetime.now(timezone.utc)
+        file_dt = self.current_date_time.strftime(self.json_name_dt_format)
+        print(f"timestamp: {file_dt}")
 
-        search_info = {
+        search_data = {
             'search_id': self.search_id,
-            'info_type': 'search',
             'url': self.search_url,
-            'search_dt': self.current_date_time,
+            'search_dt': self.current_date_time.isoformat(),
             'url_params': params
         }
         print(f"url params: {params}")
 
-        # Drops the search information into a json file
-        # TODO I think this will change if we are going to use mongo
-        json_file_name = f'search_{self.current_date_time}.json'
-        with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
-            json.dump(search_info, fp)
-        print(f"search file name: {json_file_name}")
+        json_file_name = f'search_{file_dt}.json'
+        self.send_outbound_information(search_data, json_file_name, self.kafka_search_data_topic)
 
         # Loops through the pages of the search
         for page_number in range(0, 25 * self.n_scrap_pages, 25):
@@ -220,8 +236,8 @@ if __name__ == '__main__':
     keyword = 'data%20engineer'
     location = 'Florida%2C%20United%20States'
     geo_id = 101318387
-    f_TPR = 'r604800'  #Search posting from the last week
-    f_WT = 3  #1=On-site 2=remote 3=Hybrid
+    f_TPR = 'r604800'  # Search posting from the last week
+    f_WT = 3  # 1=On-site 2=remote 3=Hybrid
 
     search_link = f'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?' \
                   f'keywords={keyword}&location={location}&geoId={geo_id}' \
@@ -230,9 +246,3 @@ if __name__ == '__main__':
 
     linkedin_scrapper = LinkedinScrapper()
     linkedin_scrapper.run_scrapper(search_link)
-
-
-
-
-
-
