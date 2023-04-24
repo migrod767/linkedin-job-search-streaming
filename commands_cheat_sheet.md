@@ -11,7 +11,7 @@ go to ``` cd /opt/bitnami/kafka/bin```
 ```./kafka-topics.sh --create --topic linkedin_scrapper --bootstrap-server localhost:9092```
 
 ### List Topics
-```./opt/bitnami/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092```
+```./kafka-topics.sh --list --bootstrap-server localhost:9092```
 
 ### Describe a Topic
 ```./kafka-topics.sh --describe --topic linkedin_scrapper --bootstrap-server localhost:9092```

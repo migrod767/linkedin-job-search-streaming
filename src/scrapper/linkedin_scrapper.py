@@ -1,17 +1,16 @@
 # source: https://www.scraperapi.com/blog/linkedin-scraper-python/
 
-import csv
-import requests
-from bs4 import BeautifulSoup
 import json
 import os
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
+import time
 import uuid
 from datetime import datetime
 from datetime import timezone
-import time
-from kafka_controller import KafkaProducer
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
+
+import requests
+from bs4 import BeautifulSoup
 
 
 class LinkedinScrapper:
@@ -24,7 +23,7 @@ class LinkedinScrapper:
         self.scraperapi_key = '0d838c8cdb4a90405e5ab4a4997a64a1'
 
         self.json_file_on_off = True
-        self.output_dir = os.path.join('..', 'data')
+        self.output_dir = os.path.join('../..', 'data')
         self.search_url = None
         self.search_id = None
 
@@ -32,32 +31,30 @@ class LinkedinScrapper:
         self.current_date_time = None
         self.current_date_time_file_fmt = None
 
-        self.kafka_on_off = False
-        self.kafka_job_data_topic = 'linkedin_scrapper_job_data'
-        self.kafka_search_data_topic = 'linkedin_scrapper_search_data'
+        self.ingestion_api_on_off = True
+        self.ingestion_api_url = 'http://127.0.0.1:8000'
+        self.ingestion_api_job_endpoint = '/ingest/job'
+        self.ingestion_api_search_endpoint = '/ingest/search'
 
-    def push_message_to_kafka(self, message, topic):
-        kafka_producer = KafkaProducer()
-        kafka_producer.load_topic(topic)
-        if isinstance(message, dict):
-            outbound_message = str(json.dumps(message))
-        elif isinstance(message, str):
-            outbound_message = message
-        else:
-            raise Exception("message type not supported")
-
-        kafka_producer.send_message(outbound_message)
-
-    def send_outbound_information(self, outbound_info, json_file_name, kafka_topic):
+    def send_outbound_information(self, outbound_info, json_file_name, data_type):
         if self.json_file_on_off is True:
             # Drops the search information into a json file
             with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
                 json.dump(outbound_info, fp)
             print(f"file name: {json_file_name}")
 
-        # Push the information to Kafka
-        if self.kafka_on_off is True:
-            self.push_message_to_kafka(outbound_info, kafka_topic)
+        # Push the information to ingest api
+        if self.ingestion_api_on_off is True:
+            if data_type == 'job':
+                ingest_url = self.ingestion_api_url + self.ingestion_api_job_endpoint
+            elif data_type == 'search':
+                ingest_url = self.ingestion_api_url + self.ingestion_api_search_endpoint
+
+            try:
+                response = requests.post(ingest_url, json={"Message": json.dumps(outbound_info)})
+                print("ingest_api response: " + response.status_code)
+            except Exception as e:
+                raise Exception(e)
 
     def search_scraper(self, page_number):
         """
@@ -114,7 +111,7 @@ class LinkedinScrapper:
             outbound_data = search_info | job_dict
 
             json_file_name = f'job_{now.strftime(self.json_name_dt_format)}.json'
-            self.send_outbound_information(outbound_data, json_file_name, self.kafka_job_data_topic)
+            self.send_outbound_information(outbound_data, json_file_name, 'job')
 
             end = time.time()
             print(f"scrape time: {end - start:6.2f} s \n")
@@ -222,7 +219,7 @@ class LinkedinScrapper:
         print(f"url params: {params}")
 
         json_file_name = f'search_{file_dt}.json'
-        self.send_outbound_information(search_data, json_file_name, self.kafka_search_data_topic)
+        self.send_outbound_information(search_data, json_file_name, 'search')
 
         # Loops through the pages of the search
         for page_number in range(0, 25 * self.n_scrap_pages, 25):
