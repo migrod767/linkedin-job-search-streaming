@@ -8,7 +8,7 @@ Run kafka container shell
 go to ``` cd /opt/bitnami/kafka/bin```
 
 ### Create Topic
-```./kafka-topics.sh --create --topic linkedin_scrapper --bootstrap-server localhost:9092```
+```./kafka-topics.sh --create --topic linkedin_scrapper_search_data --bootstrap-server localhost:9092```
 
 ### List Topics
 ```./kafka-topics.sh --list --bootstrap-server localhost:9092```
@@ -17,7 +17,7 @@ go to ``` cd /opt/bitnami/kafka/bin```
 ```./kafka-topics.sh --describe --topic linkedin_scrapper --bootstrap-server localhost:9092```
 
 ### Create Consumer
-```./kafka-console-consumer.sh --topic linkedin_scrapper --bootstrap-server localhost:9092```
+```./kafka-console-consumer.sh --topic linkedin_scrapper_search_data --bootstrap-server localhost:9092```
 
 ### Check Consumer Offset
 ```./kafka-consumer-groups.sh --bootstrap-server localhost:9092  --describe --group mypythonconsumer```

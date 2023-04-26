@@ -7,9 +7,9 @@
 -- History :         24-Apr-2023 - Establishing history
 --------------------------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS job_searches (
-    search_dt timestamp with time zone UTC ,
-    search_id uuid,
+CREATE TABLE IF NOT EXISTS scrapper.job_searches (
+    search_dt TIMESTAMP WITH TIME ZONE,
+    search_id uuid PRIMARY KEY,
     search_url VARCHAR(1000),
     keywords VARCHAR(500),
     location VARCHAR(255),

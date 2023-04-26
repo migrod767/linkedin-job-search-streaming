@@ -52,7 +52,7 @@ class LinkedinScrapper:
 
             try:
                 response = requests.post(ingest_url, json={"Message": json.dumps(outbound_info)})
-                print("ingest_api response: " + response.status_code)
+                print("ingest_api response: " + str(response.status_code))
             except Exception as e:
                 raise Exception(e)
 

@@ -7,13 +7,13 @@
 -- History :         24-Apr-2023 - Establishing history
 --------------------------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS jobs (
+CREATE TABLE IF NOT EXISTS scrapper.jobs (
     search_id UUID,
     page_number INT,
     job_id UUID,
-    scrape_dt timestamp with time zone UTC ,
+    scrape_dt TIMESTAMP WITH TIME ZONE,
     job_url VARCHAR(1000),
-    job_posted_dt timestamp with time zone UTC,
+    job_posted_dt TIMESTAMP WITH TIME ZONE,
     title VARCHAR(255),
     company VARCHAR(255),
     location VARCHAR(255),
@@ -22,6 +22,6 @@ CREATE TABLE IF NOT EXISTS jobs (
     seniority_leve VARCHAR(255),
     employment_type VARCHAR(255),
     job_function VARCHAR(500),
-    industries VARCHAR(500),
+    industries VARCHAR(500)
     );
 

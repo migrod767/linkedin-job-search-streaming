@@ -6,31 +6,41 @@ services:
   # Apache Spark      #
   # ----------------- #
   spark:
-    image: docker.io/bitnami/spark:3.3
-    environment:
-      - SPARK_MODE=master
+    image: 'jupyter/pyspark-notebook:spark-2'
     ports:
-      - '8080:8080'
-      - '4040:4040'
-      - '7077:7077'
+      - '8888:8888'
+      - "4040-4080:4040-4080"
     volumes:
-      - ./data:/data
-      - ./src:/src
+      - ./ApacheSpark/:/home/jovyan/work
+    networks:
+      - document-streaming
 
-  spark-worker-a:
-    image: docker.io/bitnami/spark:3.3
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_EXECUTOR_MEMORY=2G
-      - SPARK_WORKER_CORES=1
-    volumes:
-      - ./data:/data
-      - ./src:/src
-    depends_on:
-      - spark
-
+#  spark:
+#    image: docker.io/bitnami/spark:3.3
+#    environment:
+#      - SPARK_MODE=master
+#    ports:
+#      - '8080:8080'
+#      - '4040:4040'
+#      - '7077:7077'
+#    volumes:
+#      - ./data:/data
+#      - ./src:/src
+#
+#  spark-worker-a:
+#    image: docker.io/bitnami/spark:3.3
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_URL=spark://spark:7077
+#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_EXECUTOR_MEMORY=2G
+#      - SPARK_WORKER_CORES=1
+#    volumes:
+#      - ./data:/data
+#      - ./src:/src
+#    depends_on:
+#      - spark
+#
 #  spark-worker-b:
 #    image: docker.io/bitnami/spark:3.3
 #    environment:
@@ -54,6 +64,8 @@ services:
       - '2181:2181'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - document-streaming
 
   kafka:
     image: 'bitnami/kafka:latest'
@@ -65,5 +77,11 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - document-streaming
     depends_on:
       - zookeeper
+
+networks:
+  document-streaming:
+    driver: bridge
