@@ -41,7 +41,7 @@ class LinkedinScrapper:
             # Drops the search information into a json file
             with open(os.path.join(self.output_dir, json_file_name), 'w') as fp:
                 json.dump(outbound_info, fp)
-            print(f"file name: {json_file_name}")
+            print(f"Writing json file : {json_file_name}")
 
         # Push the information to ingest api
         if self.ingestion_api_on_off is True:
@@ -51,7 +51,8 @@ class LinkedinScrapper:
                 ingest_url = self.ingestion_api_url + self.ingestion_api_search_endpoint
 
             try:
-                response = requests.post(ingest_url, json={"Message": json.dumps(outbound_info)})
+                outbound_json = {"Message": json.dumps(outbound_info)}
+                response = requests.post(ingest_url, json=outbound_json)
                 print("ingest_api response: " + str(response.status_code))
             except Exception as e:
                 raise Exception(e)

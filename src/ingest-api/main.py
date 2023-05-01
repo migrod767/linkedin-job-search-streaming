@@ -39,6 +39,7 @@ class SearchData(BaseModel):
     PostedDateFilter: str
     OnSiteRemote: str
 
+
 class GeneralData(BaseModel):
     Message: str
 
@@ -59,8 +60,7 @@ async def root():
 
 
 @app.post("/ingest/search")
-async def post_search_data(item:GeneralData):  # body awaits a json with invoice item information
-    print("Message received")
+async def post_search_data(item: GeneralData):  # body awaits a json with invoice item information
     try:
         json_as_string = dict(item)['Message']
         kafka_produce_send_msg(json_as_string, topic=creds_c.get_kafka_topic_search_data())
@@ -72,10 +72,9 @@ async def post_search_data(item:GeneralData):  # body awaits a json with invoice
 
 
 @app.post("/ingest/job")
-async def post_job_data(item:GeneralData):  # body awaits a json with invoice item information
-    print("Message received")
+async def post_job_data(item: GeneralData):  # body awaits a json with invoice item information
     try:
-        json_as_string = json.dumps(dict(item))
+        json_as_string = dict(item)['Message']
         kafka_produce_send_msg(json_as_string, topic=creds_c.get_kafka_topic_job_data())
 
         return JSONResponse(content=dict(item), status_code=201)
@@ -85,13 +84,23 @@ async def post_job_data(item:GeneralData):  # body awaits a json with invoice it
 
 
 def kafka_produce_send_msg(outbound_message, topic):
-    producer = KafkaProducer(bootstrap_servers=creds_c.get_kafka_bootstrap_servers(),
-                             acks=1)
-
+    producer = KafkaProducer(bootstrap_servers=creds_c.get_kafka_bootstrap_servers())
     # Write the string as bytes because Kafka needs it this way
-    producer.send(topic, bytes(outbound_message, 'utf-8'))
+    producer.send(topic, value=bytes(outbound_message, 'utf-8'))
     producer.flush()
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", log_level="info", reload=True)
+    uvicorn.run("main:app", log_level="info")
+
+
+
+
+# Add endpoint to check kafka
+# import kafka
+#
+# consumer = kafka.KafkaConsumer(group_id='test', bootstrap_servers=['localhost:9092'])
+# topics = consumer.topics()
+#
+# if not topics:
+#     raise RuntimeError()

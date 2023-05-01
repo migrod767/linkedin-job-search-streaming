@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS scrapper.job_searches (
     search_id uuid PRIMARY KEY,
     search_url VARCHAR(1000),
     keywords VARCHAR(500),
-    location VARCHAR(255),
+    search_location VARCHAR(255),
     geo_id INT,
     on_site_remote smallint,
     posted_date_filter VARCHAR(255)

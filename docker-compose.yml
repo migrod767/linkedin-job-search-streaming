@@ -5,42 +5,48 @@ services:
   # ----------------- #
   # Apache Spark      #
   # ----------------- #
-  spark:
-    image: 'jupyter/pyspark-notebook:spark-2'
-    ports:
-      - '8888:8888'
-      - "4040-4080:4040-4080"
-    volumes:
-      - ./ApacheSpark/:/home/jovyan/work
-    networks:
-      - document-streaming
 
+  # Spark Notebook
 #  spark:
-#    image: docker.io/bitnami/spark:3.3
-#    environment:
-#      - SPARK_MODE=master
+#    image: 'jupyter/pyspark-notebook:spark-2'
 #    ports:
-#      - '8080:8080'
-#      - '4040:4040'
-#      - '7077:7077'
+#      - '8888:8888'
+#      - "4040-4080:4040-4080"
 #    volumes:
-#      - ./data:/data
-#      - ./src:/src
-#
-#  spark-worker-a:
-#    image: docker.io/bitnami/spark:3.3
-#    environment:
-#      - SPARK_MODE=worker
-#      - SPARK_MASTER_URL=spark://spark:7077
-#      - SPARK_WORKER_MEMORY=2G
-#      - SPARK_EXECUTOR_MEMORY=2G
-#      - SPARK_WORKER_CORES=1
-#    volumes:
-#      - ./data:/data
-#      - ./src:/src
-#    depends_on:
-#      - spark
-#
+#      - ./ApacheSpark/:/home/jovyan/work
+#    networks:
+#      - scrapper-streaming
+  # Spark
+  spark:
+    image: docker.io/bitnami/spark:3.3
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - '8080:8080'
+      - '4040:4040'
+      - '7077:7077'
+    volumes:
+      # - ./data:/data
+      - ./src/spark_streaming:/opt/bitnami/spark/src
+    networks:
+      - scrapper-streaming
+
+  spark-worker-a:
+    image: docker.io/bitnami/spark:3.3
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_EXECUTOR_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+    volumes:
+      # - ./data:/data
+      - ./src/spark_streaming:/opt/bitnami/spark/src
+    networks:
+      - scrapper-streaming
+    depends_on:
+      - spark
+
 #  spark-worker-b:
 #    image: docker.io/bitnami/spark:3.3
 #    environment:
@@ -50,8 +56,10 @@ services:
 #      - SPARK_EXECUTOR_MEMORY=2G
 #      - SPARK_WORKER_CORES=1
 #    volumes:
-#      - ./data:/data
-#      - ./src:/src
+#      # - ./data:/data
+#      - ./src/spark_streaming:/opt/bitnami/spark/src
+#    networks:
+#      - scrapper-streaming
 #    depends_on:
 #      - spark
 
@@ -65,23 +73,25 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
-      - document-streaming
+      - scrapper-streaming
 
   kafka:
     image: 'bitnami/kafka:latest'
     ports:
-      - '9092:9092'
+      - '9092-9093:9092-9093'
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT     #add aditional listener for external
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093                              #9092 will be for other containers, 9093 for your windows client
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093     #9092 will be for other containers, 9093 for your windows client
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
     networks:
-      - document-streaming
+      - scrapper-streaming
     depends_on:
       - zookeeper
 
 networks:
-  document-streaming:
+  scrapper-streaming:
     driver: bridge

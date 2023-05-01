@@ -1,6 +1,6 @@
 # Setup Commands
 
-## Kafka
+# Kafka
 Run kafka container shell
 
 ```docker exec -it 1c31511ce206 bash```
@@ -14,10 +14,13 @@ go to ``` cd /opt/bitnami/kafka/bin```
 ```./kafka-topics.sh --list --bootstrap-server localhost:9092```
 
 ### Describe a Topic
-```./kafka-topics.sh --describe --topic linkedin_scrapper --bootstrap-server localhost:9092```
+```./kafka-topics.sh --describe --topic linkedin_scrapper_job_data --bootstrap-server localhost:9092```
 
 ### Create Consumer
-```./kafka-console-consumer.sh --topic linkedin_scrapper_search_data --bootstrap-server localhost:9092```
+```./kafka-console-consumer.sh --topic linkedin_scrapper_job_data --bootstrap-server localhost:9092```
+
+### Create Producer
+```./kafka-console-producer.sh --bootstrap-server localhost:9092 --topic linkedin_scrapper_search_data --property "parse.key=true" --property "key.separator=:"```
 
 ### Check Consumer Offset
 ```./kafka-consumer-groups.sh --bootstrap-server localhost:9092  --describe --group mypythonconsumer```
@@ -36,6 +39,8 @@ run command
 
 ```ls /brokers/topics```
 
-
-
+# Spark
+Running the stream script 
+``` cd /opt/bitnami/spark/src```
+```spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5 spark_stream.py```
 
