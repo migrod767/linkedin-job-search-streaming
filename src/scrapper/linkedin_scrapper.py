@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 class LinkedinScrapper:
     def __init__(self):
         self.jobs_per_json = 10
-        self.n_scrap_pages = 10
+        self.n_scrap_pages = 3
         self.sleep_between_requests = 0.5
 
         self.scraperapi_on_off = False  # 1=on 0=off

@@ -7,45 +7,45 @@ services:
   # ----------------- #
 
   # Spark Notebook
+  spark:
+    image: 'jupyter/pyspark-notebook:spark-2'
+    ports:
+      - '8888:8888'
+      - "4040-4080:4040-4080"
+    volumes:
+      - ./ApacheSpark/:/home/jovyan/work
+    networks:
+      - scrapper-streaming
+  # Spark
 #  spark:
-#    image: 'jupyter/pyspark-notebook:spark-2'
+#    image: docker.io/bitnami/spark:3.3
+#    environment:
+#      - SPARK_MODE=master
 #    ports:
-#      - '8888:8888'
-#      - "4040-4080:4040-4080"
+#      - '8080:8080'
+#      - '4040:4040'
+#      - '7077:7077'
 #    volumes:
-#      - ./ApacheSpark/:/home/jovyan/work
+#      # - ./data:/data
+#      - ./src/spark_streaming:/opt/bitnami/spark/src
 #    networks:
 #      - scrapper-streaming
-  # Spark
-  spark:
-    image: docker.io/bitnami/spark:3.3
-    environment:
-      - SPARK_MODE=master
-    ports:
-      - '8080:8080'
-      - '4040:4040'
-      - '7077:7077'
-    volumes:
-      # - ./data:/data
-      - ./src/spark_streaming:/opt/bitnami/spark/src
-    networks:
-      - scrapper-streaming
-
-  spark-worker-a:
-    image: docker.io/bitnami/spark:3.3
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_EXECUTOR_MEMORY=2G
-      - SPARK_WORKER_CORES=1
-    volumes:
-      # - ./data:/data
-      - ./src/spark_streaming:/opt/bitnami/spark/src
-    networks:
-      - scrapper-streaming
-    depends_on:
-      - spark
+#
+#  spark-worker-a:
+#    image: docker.io/bitnami/spark:3.3
+#    environment:
+#      - SPARK_MODE=worker
+#      - SPARK_MASTER_URL=spark://spark:7077
+#      - SPARK_WORKER_MEMORY=2G
+#      - SPARK_EXECUTOR_MEMORY=2G
+#      - SPARK_WORKER_CORES=1
+#    volumes:
+#      # - ./data:/data
+#      - ./src/spark_streaming:/opt/bitnami/spark/src
+#    networks:
+#      - scrapper-streaming
+#    depends_on:
+#      - spark
 
 #  spark-worker-b:
 #    image: docker.io/bitnami/spark:3.3
