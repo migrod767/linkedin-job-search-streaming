@@ -2,20 +2,20 @@ import psycopg2
 
 
 class MyDatabase:
-    def __init__(self, arg_db="linkedin_scrapper", arg_user="postgres"):
+    def __init__(self, arg_host, arg_db, arg_user, arg_pass):
         self.db_name = arg_db
         self.conn = psycopg2.connect(
-            host="localhost",
+            host=arg_host,
             database=arg_db,
             user=arg_user,
-            password="example")
+            password=arg_pass)
         self.cur = self.conn.cursor()
 
     def run_select_sql(self, query):
         self.cur.execute(query)
         return self.cur.fetchall()
 
-    def run_DDL_sql(self, query):
+    def run_sql(self, query):
         self.cur.execute(query)
 
     def commit_sql(self):

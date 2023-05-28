@@ -14,6 +14,5 @@ CREATE TABLE IF NOT EXISTS scrapper.job_searches (
     keywords VARCHAR(500),
     search_location VARCHAR(255),
     geo_id INT,
-    on_site_remote smallint,
-    posted_date_filter VARCHAR(255)
+    on_site_remote smallint
     );

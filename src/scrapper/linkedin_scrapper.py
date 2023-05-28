@@ -15,9 +15,8 @@ from bs4 import BeautifulSoup
 
 class LinkedinScrapper:
     def __init__(self):
-        self.jobs_per_json = 10
-        self.n_scrap_pages = 3
-        self.sleep_between_requests = 0.5
+        self.n_scrap_pages = 4
+        self.sleep_between_requests = 0.8
 
         self.scraperapi_on_off = False  # 1=on 0=off
         self.scraperapi_key = '0d838c8cdb4a90405e5ab4a4997a64a1'
@@ -231,9 +230,9 @@ class LinkedinScrapper:
 
 
 if __name__ == '__main__':
-    keyword = 'data%20engineer'
-    location = 'Florida%2C%20United%20States'
-    geo_id = 101318387
+    keyword = 'data%20engineer' #'data%20engineer'
+    location = 'Los%20Angeles%20County%2C%20California%2C%20United%20States' #'Florida%2C%20United%20States'
+    geo_id = 103104382
     f_TPR = 'r604800'  # Search posting from the last week
     f_WT = 3  # 1=On-site 2=remote 3=Hybrid
 

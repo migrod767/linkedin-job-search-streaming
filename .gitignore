@@ -4,3 +4,5 @@
 /Scrapper Worksheet.xlsx
 /ApacheSpark/
 /src/SQL/postgres-notes.txt
+/src/streamlit/.streamlit/secrets.toml
+/src/ingest-api/postgres_date_fix.py

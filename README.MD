@@ -16,11 +16,6 @@ to explore and extract insights from the collected data. Overall, this pipeline 
 flexible solution for gathering, processing, and analyzing job postings from LinkedIn, opening up a world of
 possibilities for data-driven decision-making.
 
-## Data Flow Architecture
-
-![Alt text](StreamArquitechtureLinkedIn.png?raw=true "Data Flow Architecture")
-
-
 ## Stack
 
 * Python
@@ -28,5 +23,22 @@ possibilities for data-driven decision-making.
 * Kafka - Message Queue
 * Spark - Data Processing
 * PostgresSQL (AWS RDS) - Data Storage
-* StreamLite - Visualization
+* Streamlit - Visualization
+
+
+## Data Flow Architecture
+
+![Alt text](photos/StreamArquitechtureLinkedIn.png?raw=true "Data Flow Architecture")
+
+## Streamlit Dashboard
+
+![Alt text](photos/Streamlit_home_1.png?raw=true "Streamlit_home_1")
+
+![Alt text](photos/Streamlit_home_2.png?raw=true "Streamlit_home_2")
+
+![Alt text](photos/Streamlit_jobs_1.png?raw=true "Streamlit_jobs_1")
+
+![Alt text](photos/Streamlit_jobs_2.png?raw=true "Streamlit_jobs_2")
+
+
 

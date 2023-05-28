@@ -30,7 +30,7 @@ class Credentials:
         return self.credentials['Kafka']['kafka_topic_search_data']
 
     def get_aws_rds_endpoint(self):
-        return self.credentials['AWS']['rds_endpoint']
+        return self.credentials['AWS']['local_endpoint']
 
     def get_aws_rds_user(self):
         return self.credentials['AWS']['rds_user']
