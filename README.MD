@@ -32,13 +32,13 @@ possibilities for data-driven decision-making.
 
 ## Streamlit Dashboard
 
-![Alt text](photos/Streamlit_home_1.png?raw=true "Streamlit_home_1")
+![Alt text](photos/Streamlit_home_1.png "Streamlit_home_1")
 
-![Alt text](photos/Streamlit_home_2.png?raw=true "Streamlit_home_2")
+![Alt text](photos/Streamlit_home_2.png "Streamlit_home_2")
 
-![Alt text](photos/Streamlit_jobs_1.png?raw=true "Streamlit_jobs_1")
+![Alt text](photos/Streamlit_jobs_1.png "Streamlit_jobs_1")
 
-![Alt text](photos/Streamlit_jobs_2.png?raw=true "Streamlit_jobs_2")
+![Alt text](photos/Streamlit_jobs_2.png "Streamlit_jobs_2")
 
 
 
